@@ -24,9 +24,9 @@ class FedlexClient(BaseClient):
         self.test_loader = self._create_dataloader(self.test_set, shuffle=False)
 
 	# Get the absolute path to the directory containing this script
-        current_directory = os.path.dirname(os.path.realpath(__file__))
-        self.base_dir = self.find_project_root(current_directory, 'main.py')  # Ensure you replace 'marker.file' with a real file or directory name
-        self.checkpoint_path = os.path.join(self.base_dir, f"src/checkpoints/tl_base{self.args.exp_name}.ckpt")	
+        self.base_dir = os.path.dirname(os.path.realpath(__file__)) 
+        check_dir = "checkpoints/"
+        self.checkpoint_path = os.path.join(check_dir, f"tl_base{self.args.exp_name}.ckp")
 	
     def find_project_root(self,current_directory, marker):
         root = current_directory
@@ -212,4 +212,3 @@ class FedlexClient(BaseClient):
 
     def __repr__(self):
         return f'CLIENT < {self.id} >'
-
