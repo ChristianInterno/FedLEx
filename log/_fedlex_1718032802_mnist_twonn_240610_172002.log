@@ -1,0 +1,170 @@
+[INFO] (2024/06/10 05:20:02 PM) [WELCOME] Initialize...
+[INFO] (2024/06/10 05:20:02 PM) 
+       _______ _______ ______  |       _____ \   /
+       |______ |______ |     \ |      |_____  \ /
+       |       |_______|_____/ |_____ |_____  / \ 
+       |                                     /   \ 
+
+                    Christian Interno´
+       
+[INFO] (2024/06/10 05:20:08 PM) [SEED] ...seed is set: 1718032802!
+[INFO] (2024/06/10 05:20:08 PM) [LOAD] Fetch dataset!
+[INFO] (2024/06/10 05:20:08 PM) [LOAD] [MNIST] Fetching dataset!
+[INFO] (2024/06/10 05:20:08 PM) [LOAD] [MNIST] ...fetched dataset!
+[INFO] (2024/06/10 05:20:08 PM) [LOAD] ...successfully fetched dataset!
+[INFO] (2024/06/10 05:20:08 PM) [SIMULATE] Simulate dataset split (split scenario: `PATHO`)!
+[INFO] (2024/06/10 05:20:08 PM) [SIMULATE] ...assigning to clients... 100% |████████████████████| [10    /10]
+[INFO] (2024/06/10 05:20:10 PM) [SIMULATE] ...done simulating dataset split (split scenario: `PATHO`)!
+[INFO] (2024/06/10 05:20:10 PM) [SIMULATE] Create client datasets!
+[INFO] (2024/06/10 05:20:10 PM) [SIMULATE] ...creating client datasets... 100% |████████████████████| [10    /10]
+[INFO] (2024/06/10 05:20:10 PM) [SIMULATE] ...successfully created client datasets!
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] List up configurations...
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - EXP_NAME: _fedlex_1718032802_mnist_twonn_240610_172002
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - SEED: 1718032802
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - DEVICE: cuda
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - DEVICE_IDS: []
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - DATA_PATH: ./data
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - LOG_PATH: ./log
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - RESULT_PATH: ./result_paper/10K/Patho/MNIST/TwoNN/fedlex/_fedlex_1718032802_mnist_twonn_240610_172002
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - USE_TB: False
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - TB_PORT: 6006
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - TB_HOST: 0.0.0.0
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - DATASET: MNIST
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - TEST_FRACTION: 0.2
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - RAWSMPL: 1.0
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - RESIZE: 24
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - IMNORM: False
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - RANDROT: None
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - RANDHF: 0.5
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - RANDVF: None
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - RANDJIT: 0.5
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - SPLIT_TYPE: patho
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - MINCLS: 2
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - CNCNTRTN: 0.2
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - MODEL_NAME: TwoNN
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - HIDDEN_SIZE: 200
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - DROPOUT: 0.1
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - USE_MODEL_TOKENIZER: False
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - USE_PT_MODEL: False
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - SEQ_LEN: 512
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - NUM_LAYERS: 2
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - NUM_EMBEDDINGS: 1000
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - EMBEDDING_SIZE: 512
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - INIT_TYPE: xavier
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - INIT_GAIN: 1.0
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - ALGORITHM: fedlex
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - EVAL_TYPE: both
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - EVAL_FRACTION: 1.0
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - EVAL_EVERY: 1
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - EVAL_METRICS: ['acc1', 'acc5', 'f1', 'precision', 'recall']
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - K: 10
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - R: 200
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - C: 0.2
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - E: 5
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - B: 350
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - BETA: 0.9
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - NO_SHUFFLE: False
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - OPTIMIZER: Adam
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - MAX_GRAD_NORM: 0.0
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - WEIGHT_DECAY: 0
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - MOMENTUM: 0.0
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - LR: 0.0003
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - LR_SERVER: 0.0003
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - LR_DECAY: 0.99
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - LR_DECAY_STEP: 1
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - CRITERION: CrossEntropyLoss
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - MU: 0.01
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - PATIENCE_MASK: 40
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - EPOOCHS_MASK: 1
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - PERC_CLIENTS_FOR_MASK: 0.1
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - GUIDENCE_NORMALIZATION: MinMax
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - BETA1: 0.9
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - TAU: 0.001
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - PLOT: False
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - IN_CHANNELS: 1
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - NUM_CLASSES: 10
+[INFO] (2024/06/10 05:20:13 PM) [CONFIG] - _TRAIN_ONLY: False
+[INFO] (2024/06/10 05:20:13 PM) [FEDLEX] [Round: 0000] Initialize a model!
+[INFO] (2024/06/10 05:20:13 PM) [FEDLEX] [Round: 0000] ...sucessfully initialized the model (TwoNN; (Initialization type: XAVIER))!
+[INFO] (2024/06/10 05:20:13 PM) Saving first version of model...
+[INFO] (2024/06/10 05:20:13 PM) [FEDLEX] [Round: 0000] Create clients!
+[INFO] (2024/06/10 05:20:21 PM) [FEDLEX] [Round: 0000] ...creating clients... 100% |████████████████████| [10    /10]
+[INFO] (2024/06/10 05:20:21 PM) [FEDLEX] [Round: 0000] ...creating clients... 100% |████████████████████| [10    /10]
+[INFO] (2024/06/10 05:20:21 PM) [FEDLEX] [Round: 0000] ...sucessfully created 10 clients!
+[INFO] (2024/06/10 05:20:21 PM) [FEDLEX] [Round: 0001] Sample clients!
+[INFO] (2024/06/10 05:20:21 PM) [FEDLEX] [Round: 0001] ...2 clients are selected!
+[INFO] (2024/06/10 05:20:21 PM) [FEDLEX] [Round: 0001] Broadcast the global model at the server!
+[INFO] (2024/06/10 05:20:21 PM) [FEDLEX] [Round: 0001] ...broadcasting server model... 100% |████████████████████| [2     /2]
+[INFO] (2024/06/10 05:20:21 PM) [FEDLEX] [Round: 0001] ...sucessfully broadcasted the model to selected 2 clients!
+[INFO] (2024/06/10 05:20:21 PM) [FEDLEX] [Round: 0001] Request updates to 2 clients!
+[INFO] (2024/06/10 05:20:30 PM) [FEDLEX] [Round: 0001] ...update clients...  50% |██████████          | [1     /2]
+[INFO] (2024/06/10 05:20:42 PM) [FEDLEX] [Round: 0001] ...update clients... 100% |████████████████████| [2     /2]
+[INFO] (2024/06/10 05:20:42 PM) [FEDLEX] [Round: 0001] ...update clients... 100% |████████████████████| [2     /2]
+[INFO] (2024/06/10 05:20:42 PM) [FEDLEX] [Round: 0001] [UPDATE] [CLIENT] < 000009 > | loss: 0.3918 | acc1: 0.9299 | acc5: 1.0000 | f1: 0.9299 | precision: 0.9306 | recall: 0.9299 
+[INFO] (2024/06/10 05:20:42 PM) [FEDLEX] [Round: 0001] [UPDATE] [CLIENT] < 000003 > | loss: 6.8841 | acc1: 0.0000 | acc5: 0.0140 | f1: 0.0000 | precision: 0.0000 | recall: 0.0000 
+[INFO] (2024/06/10 05:20:42 PM) [FEDLEX] [Round: 0001] [UPDATE] [SUMMARY] (2 clients):
+    - Loss: Weighted Avg. (3.4570) | Equal Avg. (3.6380) | Std. (3.2461) |
+    - Acc1: Weighted Avg. (0.4909) | Equal Avg. (0.4649) | Std. (0.4649) |
+    - Acc5: Weighted Avg. (0.5345) | Equal Avg. (0.5070) | Std. (0.4930) |
+    - F1: Weighted Avg. (0.4909) | Equal Avg. (0.4650) | Std. (0.4650) |
+    - Precision: Weighted Avg. (0.4912) | Equal Avg. (0.4653) | Std. (0.4653) |
+    - Recall: Weighted Avg. (0.4909) | Equal Avg. (0.4649) | Std. (0.4649) |
+[INFO] (2024/06/10 05:20:42 PM) [FEDLEX] [Round: 0001] ...completed updates of 2 clients!
+[INFO] (2024/06/10 05:20:42 PM) [FEDLEX] [Round: 0001] Request evaluation to 2 clients!
+[INFO] (2024/06/10 05:20:43 PM) [FEDLEX] [Round: 0001] ...evaluate clients...  50% |██████████          | [1     /2]
+[INFO] (2024/06/10 05:20:43 PM) [FEDLEX] [Round: 0001] ...evaluate clients... 100% |████████████████████| [2     /2]
+[INFO] (2024/06/10 05:20:43 PM) [FEDLEX] [Round: 0001] ...evaluate clients... 100% |████████████████████| [2     /2]
+[INFO] (2024/06/10 05:20:43 PM) [FEDLEX] [Round: 0001] [EVALUATE] [CLIENT] < 000009 > | loss: 0.3896 | acc1: 0.9349 | acc5: 1.0000 | f1: 0.9350 | precision: 0.9361 | recall: 0.9349 
+[INFO] (2024/06/10 05:20:43 PM) [FEDLEX] [Round: 0001] [EVALUATE] [CLIENT] < 000003 > | loss: 7.0174 | acc1: 0.0000 | acc5: 0.0133 | f1: 0.0000 | precision: 0.0000 | recall: 0.0000 
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] [EVALUATE] [SUMMARY] (2 clients):
+    - Loss: Weighted Avg. (3.5187) | Equal Avg. (3.7035) | Std. (3.3139) |
+    - Acc1: Weighted Avg. (0.4935) | Equal Avg. (0.4674) | Std. (0.4674) |
+    - Acc5: Weighted Avg. (0.5342) | Equal Avg. (0.5067) | Std. (0.4933) |
+    - F1: Weighted Avg. (0.4936) | Equal Avg. (0.4675) | Std. (0.4675) |
+    - Precision: Weighted Avg. (0.4941) | Equal Avg. (0.4680) | Std. (0.4680) |
+    - Recall: Weighted Avg. (0.4935) | Equal Avg. (0.4674) | Std. (0.4674) |
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] ...completed evaluation of 2 clients!
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] Aggregate updated signals!
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] ...successfully aggregated into a new gloal model!
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] Clean up!
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] ...successfully cleaned up!
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] Sample clients!
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] ...8 clients are selected!
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] Broadcast the global model at the server!
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] ...broadcasting server model... 100% |████████████████████| [8     /8]
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] ...sucessfully broadcasted the model to selected 8 clients!
+[INFO] (2024/06/10 05:20:44 PM) [FEDLEX] [Round: 0001] Request evaluation to 8 clients!
+[INFO] (2024/06/10 05:20:45 PM) [FEDLEX] [Round: 0001] ...evaluate clients...  12% |██▌                 | [1     /8]
+[INFO] (2024/06/10 05:20:45 PM) [FEDLEX] [Round: 0001] ...evaluate clients...  25% |█████               | [2     /8]
+[INFO] (2024/06/10 05:20:45 PM) [FEDLEX] [Round: 0001] ...evaluate clients...  38% |███████▌            | [3     /8]
+[INFO] (2024/06/10 05:20:46 PM) [FEDLEX] [Round: 0001] ...evaluate clients...  50% |██████████          | [4     /8]
+[INFO] (2024/06/10 05:20:46 PM) [FEDLEX] [Round: 0001] ...evaluate clients...  62% |████████████▌       | [5     /8]
+[INFO] (2024/06/10 05:20:47 PM) [FEDLEX] [Round: 0001] ...evaluate clients...  75% |███████████████     | [6     /8]
+[INFO] (2024/06/10 05:20:47 PM) [FEDLEX] [Round: 0001] ...evaluate clients...  88% |█████████████████▌  | [7     /8]
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] ...evaluate clients... 100% |████████████████████| [8     /8]
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] ...evaluate clients... 100% |████████████████████| [8     /8]
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] [EVALUATE] [CLIENT] < 000008 > | loss: 3.6757 | acc1: 0.4866 | acc5: 0.5411 | f1: 0.4921 | precision: 0.4977 | recall: 0.4866 
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] [EVALUATE] [CLIENT] < 000007 > | loss: 7.2733 | acc1: 0.0000 | acc5: 0.0132 | f1: 0.0000 | precision: 0.0000 | recall: 0.0000 
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] [EVALUATE] [CLIENT] < 000006 > | loss: 5.4324 | acc1: 0.0000 | acc5: 1.0000 | f1: 0.0000 | precision: 0.0000 | recall: 0.0000 
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] [EVALUATE] [CLIENT] < 000005 > | loss: 6.6165 | acc1: 0.0000 | acc5: 0.5975 | f1: 0.0000 | precision: 0.0000 | recall: 0.0000 
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] [EVALUATE] [CLIENT] < 000004 > | loss: 5.3507 | acc1: 0.4851 | acc5: 0.5047 | f1: 0.3297 | precision: 0.2497 | recall: 0.4851 
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] [EVALUATE] [CLIENT] < 000002 > | loss: 8.4114 | acc1: 0.0000 | acc5: 0.0187 | f1: 0.0000 | precision: 0.0000 | recall: 0.0000 
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] [EVALUATE] [CLIENT] < 000001 > | loss: 6.3408 | acc1: 0.0000 | acc5: 0.7756 | f1: 0.0000 | precision: 0.0000 | recall: 0.0000 
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] [EVALUATE] [CLIENT] < 000000 > | loss: 7.4348 | acc1: 0.0000 | acc5: 0.4247 | f1: 0.0000 | precision: 0.0000 | recall: 0.0000 
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] [EVALUATE] [SUMMARY] (8 clients):
+    - Loss: Weighted Avg. (6.2881) | Equal Avg. (6.3170) | Std. (1.3844) |
+    - Acc1: Weighted Avg. (0.1235) | Equal Avg. (0.1215) | Std. (0.2104) |
+    - Acc5: Weighted Avg. (0.4913) | Equal Avg. (0.4844) | Std. (0.3181) |
+    - F1: Weighted Avg. (0.1052) | Equal Avg. (0.1027) | Std. (0.1825) |
+    - Precision: Weighted Avg. (0.0961) | Equal Avg. (0.0934) | Std. (0.1733) |
+    - Recall: Weighted Avg. (0.1235) | Equal Avg. (0.1215) | Std. (0.2104) |
+[INFO] (2024/06/10 05:20:48 PM) [FEDLEX] [Round: 0001] ...completed evaluation of 8 clients!
+[INFO] (2024/06/10 05:20:49 PM) [FEDLEX] [Round: 0001] [EVALUATE] [SERVER] | loss: 5.9422 | acc1: 0.2019 | acc5: 0.5024 | f1: 0.1149 | precision: 0.0957 | recall: 0.2019 
+[INFO] (2024/06/10 05:20:49 PM) [FEDLEX] [Round: 0001] Clean up!
+[INFO] (2024/06/10 05:20:49 PM) [FEDLEX] [Round: 0001] ...successfully cleaned up!
+[INFO] (2024/06/10 05:20:50 PM) [FEDLEX] [Round: 0002] Sample clients!
+[INFO] (2024/06/10 05:20:50 PM) [FEDLEX] [Round: 0002] ...2 clients are selected!
+[INFO] (2024/06/10 05:20:50 PM) [FEDLEX] [Round: 0002] Broadcast the global model at the server!
+[INFO] (2024/06/10 05:20:50 PM) [FEDLEX] [Round: 0002] ...broadcasting server model... 100% |████████████████████| [2     /2]
+[INFO] (2024/06/10 05:20:50 PM) [FEDLEX] [Round: 0002] ...sucessfully broadcasted the model to selected 2 clients!
+[INFO] (2024/06/10 05:20:50 PM) [FEDLEX] [Round: 0002] Request updates to 2 clients!
