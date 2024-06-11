@@ -88,6 +88,6 @@ Start your FedLEx journey with the following example:
 ```
 ## Acknowledgements
 
-This project, **Federated Loss Exploration for Improved Convergence on Non-IID Data**, draws inspiration from the code structure for PyTorch implementation of the [FedLEx GitHub repository](https://github.com/vaseline555/Federated-Learning-in-PyTorch), developed by [@vaseline555](https://github.com/vaseline555).
+This project, **Federated Loss Exploration for Improved Convergence on Non-IID Data**, draws inspiration from the code structure for PyTorch implementation of the [Federated-Learning-in-PyTorch](https://github.com/vaseline555/Federated-Learning-in-PyTorch), developed by [@vaseline555](https://github.com/vaseline555).
 
 
