@@ -26,7 +26,7 @@ class FedlexClient(BaseClient):
 	# Get the absolute path to the directory containing this script
         self.base_dir = os.path.dirname(os.path.realpath(__file__)) 
         check_dir = "checkpoints/"
-        self.checkpoint_path = os.path.join(check_dir, f"tl_base{self.args.exp_name}.ckp")
+        self.checkpoint_path = os.path.join(check_dir, f"tl_base{self.args.exp_name}.ckpt")
 	
     def find_project_root(self,current_directory, marker):
         root = current_directory
