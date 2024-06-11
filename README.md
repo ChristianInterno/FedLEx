@@ -86,4 +86,8 @@ Start your FedLEx journey with the following example:
       --optimizer Adam --lr  0.0003 --lr_decay 0.99 --lr_decay_step 1 --criterion CrossEntropyLoss\
       --Patience_mask 40 --epoochs_mask 150 --perc_clients_for_mask 1
 ```
+## Acknowledgements
+
+This project, **Federated Loss Exploration for Improved Convergence on Non-IID Data**, draws inspiration from the code structure for PyTorch implementation of the [FedLEx GitHub repository](https://github.com/vaseline555/Federated-Learning-in-PyTorch), developed by [@vaseline555](https://github.com/vaseline555).
+
 
