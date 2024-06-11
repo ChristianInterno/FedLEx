@@ -1,7 +1,5 @@
-# FedLEx
-
 # Federated Loss Exploration for Improved Convergence on Non-IID Data
-This is the repositoy for the paper FedLEx submitteed at WCCI'24.
+This is the repositoy for the paper FedLEx submitteed at WCCI'24 (IJCNN).
 
 ## Architecture Overview
 
