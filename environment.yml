@@ -1,4 +1,4 @@
-name: AutoFLIP
+name: FedLEx
 channels:
   - pytorch
   - conda-forge
