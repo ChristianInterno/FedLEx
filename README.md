@@ -1,6 +1,8 @@
 # Federated Loss Exploration for Improved Convergence on Non-IID Data
 If you use FedLEx in your research, please cite our paper as follows:
 
+```bash
+
 @INPROCEEDINGS{10651455,
   author={Internò, Christian and Olhofer, Markus and Jin, Yaochu and Hammer, Barbara},
   booktitle={2024 International Joint Conference on Neural Networks (IJCNN)}, 
@@ -10,6 +12,7 @@ If you use FedLEx in your research, please cite our paper as follows:
   doi={10.1109/IJCNN60899.2024.10651455},
   keywords={Training; Navigation; Federated learning; Neural networks; Distributed databases; Robustness; Data models; Federated Learning; Neural Networks; Knowledge Transfer; Non-IID data}
 }
+```
 
 ## Architecture Overview
 
