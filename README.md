@@ -1,4 +1,8 @@
 # Federated Loss Exploration for Improved Convergence on Non-IID Data
+
+<a href="https://ieeexplore.ieee.org/document/10651455" target="_blank"><img src="https://img.shields.io/badge/Read%20the%20Paper-IEEE%20Xplore-blue"></a>
+
+
 If you use FedLEx in your research, please cite our paper as follows:
 
 ```bash
