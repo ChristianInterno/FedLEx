@@ -17,7 +17,7 @@ from src import init_weights, TqdmToLogger, MetricManager
 from .fedlexbaseserver import fedlexbaseserver
 import matplotlib.pyplot as plt
 from src.plot_utils import plot_metric_server, plot_metric_client, plot_Trajectory_l2, top_eigenvalues
-from src.GTL_utils import create_mask,mask_exists # Import the function to apply the mask
+from src.GTL_utils import create_mask, mask_exists, create_mask_pruining  # Import the function to apply the mask
 from src.utils import compute_loss, compute_loss_landscape
 import torch.nn as nn
 
@@ -25,11 +25,12 @@ logger = logging.getLogger(__name__)
 
 checkpoint_dir_name = 'checkpoints'
 
-class FedlexServer(fedlexbaseserver):
+
+class Fedlexserver(fedlexbaseserver):
     def __init__(self, args, writer, server_dataset, client_datasets, model):
+
         self.args = args
         self.writer = writer
-
 
         # round indicator
         self.round = 0
@@ -39,7 +40,12 @@ class FedlexServer(fedlexbaseserver):
             self.server_dataset = server_dataset
 
         # model
+        #checkpoint_path = f'checkpoints/InitPruinedGlobalModel/IPGB_{self.args.exp_name}.pt'
+        
+        #self.model = self._init_model_with_pruning(model, checkpoint_path)
         self.model = self._init_model(model)
+        #torch.save(self.model.state_dict(),f'checkpointss/InitPruinedGlobalModel/NonPruining_{self.args.exp_name}.pt')
+
 
         # server aggregator
         self.server_optimizer = self._get_algorithm(self.model, lr=self.args.lr_server, momentum=self.args.beta)
@@ -55,8 +61,7 @@ class FedlexServer(fedlexbaseserver):
         self.results = defaultdict(dict)
 
         self.trajectories = []
-
-
+    
     def compute_and_save_loss_landscape(self):
         # Define the CIFAR-10 dataset and dataloader
         transform = transforms.Compose(
@@ -81,6 +86,27 @@ class FedlexServer(fedlexbaseserver):
         np.save(f'loss_landscape{self.args.exp_name}.npy', losses)
 
 
+    #def _init_model_with_pruning(self, model, checkpoint_path): #AutoFLIP stuff
+        #logger.info(
+            #f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] Initialize a model with pruning!')
+
+        #Load the pruned model's state dict
+        #checkpoint = torch.load(checkpoint_path, map_location=torch.device('cuda')) #check if cpu or gpu
+        #if 'state_dict' in checkpoint:
+            #pruned_state_dict = checkpoint['state_dict']
+        #else:
+            #pruned_state_dict = checkpoint  # Adjust based on the actual structure of your checkpoint
+
+        #Update model to use pruned weights
+        #model.load_state_dict(pruned_state_dict)
+
+        #logger.info(
+            #f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] ...successfully initialized the model with pruned weights!')
+        #logger.info(f'Saving pruned version of model...')
+        #torch.save(model.state_dict(), os.path.join(self.args.result_path, f'{self.args.exp_name}_Pruned_Init.pt'))
+
+        #return model
+
     def _init_model(self, model):
         logger.info(f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] Initialize a model!')
         init_weights(model, self.args.init_type, self.args.init_gain)
@@ -100,19 +126,19 @@ class FedlexServer(fedlexbaseserver):
             f'{self.args.algorithm.title()}Client']
 
         def __create_client(identifier, datasets):
-            client = CLINET_CLASS(args=self.args, training_set=datasets[0], test_set=datasets[-1])
+            client = CLINET_CLASS(id=identifier, args=self.args, training_set=datasets[0], test_set=datasets[-1])
             client.id = identifier
             mask = client.create_scout(model=self.model)
-            return client,mask
+            return client, mask
 
         logger.info(f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] Create clients!')
 
         percentage = self.args.perc_clients_for_mask
         num_clients_to_create_mask = round(percentage * len(client_datasets))
         clients_to_create_mask = random.sample(range(len(client_datasets)), num_clients_to_create_mask)
-
+        
         print(F'!! {num_clients_to_create_mask} are starting to explore !!')
-
+        
         clients = []
         self.global_scout = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=min(int(self.args.K), os.cpu_count() - 1)) as workhorse:
@@ -123,17 +149,17 @@ class FedlexServer(fedlexbaseserver):
                     total=len(client_datasets)
             ):
                 ##########################################
-                #Questo e per esperimento LEAF, per  non creare scout per ogni client ne selezionamo solo un percentuale
+                # Questo e per esperimento LEAF, per  non creare scout per ogni client ne selezionamo solo un percentuale
                 if identifier in clients_to_create_mask:
                     client, mask = workhorse.submit(__create_client, identifier, datasets).result()
                     clients.append(client)
                     self.global_scout.append(mask.state_dict())
                 else:
-                    client = CLINET_CLASS(args=self.args, training_set=datasets[0], test_set=datasets[-1])
+                    client = CLINET_CLASS(id=identifier, args=self.args, training_set=datasets[0], test_set=datasets[-1])
                     client.id = identifier
                     clients.append(client)
-
-                ##########################################
+                    
+                #########################################
 
                 # client, mask = workhorse.submit(__create_client, identifier, datasets).result()
                 # clients.append(client)
@@ -160,7 +186,8 @@ class FedlexServer(fedlexbaseserver):
                  _{__} _{__}     ||\n
                 (    )(    )     ||\n
             ^^~  `""""""  ~^^^~^^~~~^^^~^^^~^^^~^^~^""")
-        logger.info(f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] ...sucessfully created {self.args.K} clients!')
+        logger.info(
+            f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] ...sucessfully created {self.args.K} clients!')
 
         return clients
 
@@ -169,9 +196,9 @@ class FedlexServer(fedlexbaseserver):
             client.download(self.model)
 
         logger.info(
-            f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] Broadcast the global model at the server!')
+            f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] Broadcast the pruned global model at the server!')
 
-        self.model.to('cpu')
+        self.model.to('cuda')
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(ids), os.cpu_count() - 1)) as workhorse:
             for identifier in TqdmToLogger(
@@ -187,11 +214,11 @@ class FedlexServer(fedlexbaseserver):
     def _sample_clients(self, exclude=[]):
         logger.info(f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] Sample clients!')
 
-        if exclude == []:        # Update - randomly select max(floor(C * K), 1) clients
+        if exclude == []:  # Update - randomly select max(floor(C * K), 1) clients
             num_sampled_clients = max(int(self.args.C * self.args.K), 1)
             sampled_client_ids = sorted(random.sample([i for i in range(self.args.K)], num_sampled_clients))
 
-        else:        # Evaluation - randomly select unparticipated clients in amount of `eval_fraction` multiplied
+        else:  # Evaluation - randomly select unparticipated clients in amount of `eval_fraction` multiplied
             num_unparticipated_clients = self.args.K - len(exclude)
             if num_unparticipated_clients == 0:  # when C = 1, i.e., need to evaluate on all clients
                 num_sampled_clients = self.args.K
@@ -279,6 +306,7 @@ class FedlexServer(fedlexbaseserver):
 
         def __update_clients(client):
             client.args.lr = self.lr_scheduler.get_last_lr()[-1]
+            client.args.curr_round = self.round  # Set current round in client's args
             update_result = client.update()
             return {client.id: len(client.training_set)}, {client.id: update_result}
 
@@ -319,15 +347,17 @@ class FedlexServer(fedlexbaseserver):
                         desc=f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] ...update clients... ',
                         total=len(ids)
                 ):
-
                     results.append(workhorse.submit(__update_clients, self.clients[idx]).result())
 
                 if self.args.perc_clients_for_mask == 1:
-                    global_scout_filtered = [self.global_scout [i] for i in ids] #we are selecting the scout for create the Mask for this round
-                    create_mask(model_checkpoint=f'tl_base{self.args.exp_name}', scouts=global_scout_filtered, name_file=self.args.exp_name, args = self.args)
+                    global_scout_filtered = [self.global_scout[i] for i in
+                                             ids]  # we are selecting the scout for create the Mask for this round
+                    create_mask_pruining(model_checkpoint=f'tl_base{self.args.exp_name}', scouts=global_scout_filtered,
+                                name_file=self.args.exp_name, args=self.args)#use global_scout_filtered for update mask
                 else:
-                    create_mask(model_checkpoint=f'tl_base{self.args.exp_name}', scouts=self.global_scout, name_file=self.args.exp_name, args = self.args)#usiamo sempre la mask creata all inizio dalla percentuale desiderate di C
-
+                    create_mask(model_checkpoint=f'tl_base{self.args.exp_name}', scouts=self.global_scout,
+                                name_file=self.args.exp_name,
+                                args=self.args)  # usiamo sempre la mask creata all inizio dalla percentuale desiderate di C
 
             update_sizes, update_results = list(map(list, zip(*results)))
             update_sizes, update_results = dict(ChainMap(*update_sizes)), dict(ChainMap(*update_results))
@@ -342,6 +372,10 @@ class FedlexServer(fedlexbaseserver):
             return update_sizes
 
     def _aggregate(self, ids, updated_sizes):
+        logger.info("Global model parameter shapes before aggregation:")
+        for name, param in self.model.named_parameters():
+            logger.info(f"{name}: {param.shape}")
+        
         logger.info(f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] Aggregate updated signals!')
 
         # calculate mixing coefficients according to sample sizes
@@ -409,9 +443,22 @@ class FedlexServer(fedlexbaseserver):
     def update(self):
         """Update the global model through federated learning.
         """
+        
+        # Create directory for the current round
+        round_dir = os.path.join(self.args.result_path, f'round_{self.round}')
+        if not os.path.exists(round_dir):
+            os.makedirs(round_dir)
+
+        # Save global model parameters before aggregation
+        torch.save(self.model.state_dict(), os.path.join(
+            round_dir, 'global_model_before_aggregation.pth'))
+
+        # Save optimizer state before aggregation
+        torch.save(self.server_optimizer.state_dict(), os.path.join(
+            round_dir, 'global_optimizer_before_aggregation.pth'))
+        
         # randomly select clients
         selected_ids = self._sample_clients()
-
 
         # broadcast the current model at the server to selected clients
         self._broadcast_models(selected_ids)
@@ -425,6 +472,15 @@ class FedlexServer(fedlexbaseserver):
         # receive updates and aggregate into a new weights
         self.server_optimizer.zero_grad()  # empty out buffer
         self._aggregate(selected_ids, updated_sizes)  # aggregate local updates
+        
+        # Save global model parameters after aggregation
+        torch.save(self.model.state_dict(), os.path.join(
+            round_dir, 'global_model_after_aggregation.pth'))
+
+        # Save optimizer state after aggregation
+        torch.save(self.server_optimizer.state_dict(), os.path.join(
+            round_dir, 'global_optimizer_after_aggregation.pth'))
+        
         self.server_optimizer.step()  # update global model with the aggregated update
         self.lr_scheduler.step()  # update learning rate
 
@@ -433,9 +489,6 @@ class FedlexServer(fedlexbaseserver):
         # remove model copy in clients
         self._cleanup(selected_ids)
         return selected_ids
-
-
-
 
     def evaluate(self, excluded_ids):
         """Evaluate the global model located at the server.
@@ -491,23 +544,17 @@ class FedlexServer(fedlexbaseserver):
 
         # Plot
         if self.args.plot:
-            metrics= self.args.eval_metrics
+            metrics = self.args.eval_metrics
 
             json_data = results
             # Call the plot_metric function
             for metric in metrics:
                 save_path = os.path.join(self.args.result_path, f'server_evaluated_{metric}.pdf')
-                plot_metric_server(json_data, metric,save_path)
+                plot_metric_server(json_data, metric, save_path)
 
             for metric in metrics:
                 save_path = os.path.join(self.args.result_path, f'clients_evaluated_{metric}.pdf')
-                plot_metric_client(json_data, metric,save_path)
-
-        # save_path_t2 = os.path.join(self.args.result_path, 'trajectory_parameters_L2_during_training')
-        # plot_Trajectory_l2(self.trajectories, save_path_t=save_path_t2)
-        
-        # logger.info(f'Saving loss landscape...')
-        # self.compute_and_save_loss_landscape()
+                plot_metric_client(json_data, metric, save_path)
 
         self.writer.close()
         logger.info(
