@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 
-class FedavgServer(BaseServer):
+class Fedavgserver(BaseServer):
     def __init__(self, args, writer, server_dataset, client_datasets, model):
         self.args = args
         self.writer = writer
@@ -115,7 +115,7 @@ class FedavgServer(BaseServer):
         
         logger.info(f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] Broadcast the global model at the server!')
         
-        self.model.to('cpu')
+        self.model.to('cuda')
         with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(ids), os.cpu_count() - 1)) as workhorse:
             for identifier in TqdmToLogger(
                 ids, 
