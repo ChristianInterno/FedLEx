@@ -356,7 +356,7 @@ class FedlexClient(BaseClient):
         self.model = copy.deepcopy(model)
 
     def upload(self):
-        self.model.to('cuda')
+        self.model.to('self.args.device')
         return self.model.named_parameters()
 
     def __len__(self):
