@@ -26,17 +26,20 @@ def main(args, writer):
 
     server_dataset, client_datasets = load_dataset(args)
 
-    # adjust device
+    # adjust device selection
     if 'cuda' in args.device:
-        assert torch.cuda.is_available(), 'Please check if your GPU is available now!'
-        args.device = 'cuda' if args.device_ids == [] else f'cuda:{args.device_ids[0]}'
+        assert torch.cuda.is_available(), 'Please check if your CUDA GPU is available!'
+        args.device = 'cuda' if not args.device_ids else f'cuda:{args.device_ids[0]}'
+    elif 'mps' in args.device:
+        assert torch.backends.mps.is_available(), 'MPS device (Mac GPU) is not available. Ensure you have a supported macOS and device.'
+        args.device = 'mps'
+    else:
+        args.device = 'cpu'
 
-    if torch.cuda.is_available():
-        n_gpus = torch.cuda.device_count()
-    #     device = torch.device("cuda")
-    # else:
-    #     device = torch.device("cpu")
-    #     raise ImportWarning('GPU NOT FOUND. CPU computation might be slow.')
+    # setting up device in PyTorch
+    device = torch.device(args.device)
+
+    print(f"Using device: {device}")
 
 
     # get model
@@ -85,7 +88,7 @@ if __name__ == "__main__":
     parser.add_argument('--exp_name', help='experiment name', type=str, required=False, default=['FedLex'])
     seed = int(time.time())
     parser.add_argument('--seed', help='global random seed', type=int, default=seed)
-    parser.add_argument('--device', help='device to use; `cpu`, `cuda`, `cuda:GPU_NUMBER`', type=str, default='cuda')
+    parser.add_argument('--device', help='device to use; `cpu`, `cuda`, `cuda:GPU_NUMBER`', type=str, default='mps')
     parser.add_argument('--device_ids',  nargs='+', type=int, help='GPU device ids for multi-GPU training (use all available GPUs if no number is passed)', default=[])
     parser.add_argument('--data_path', help='path to read data from', type=str, default='./data')
     parser.add_argument('--log_path', help='path to store logs', type=str, default='./log')
