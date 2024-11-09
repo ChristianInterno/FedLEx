@@ -129,6 +129,12 @@ if __name__ == "__main__":
     ''', type=str, choices=['iid', 'unbalanced', 'patho', 'diri', 'pre'], required=False, default='patho')
     parser.add_argument('--mincls', help='the minimum number of distinct classes per client (only used when `split_type` is `patho`)', type=int, default=2)
     parser.add_argument('--cncntrtn', help='a concentration parameter for Dirichlet distribution (only used when `split_type` is `diri`)', type=float, default=0.2)
+    # Additional arguments for Continual Learning
+    parser.add_argument('--num_tasks', help='number of tasks for task-based split', type=int, default=5)
+    parser.add_argument('--lambda_', help='modulation factor for Guidance Matrix', type=float, default=0.01)
+    parser.add_argument('--alpha', help='exponential moving average factor for Guidance Matrix', type=float, default=0.9)
+    parser.add_argument('--buffer_size', help='size of replay buffer for experience replay', type=int, default=100)
+    
 
 
     ###################
