@@ -5,8 +5,6 @@ import torch.nn.functional as F
 from torch.autograd import grad
 import numpy as np
 
-plt.style.use('FedLEx/src/plot_style.txt')
-
 def plot_metric_server(json_data, metric_name, save_path):
     iterations = []
     metric_values = []
