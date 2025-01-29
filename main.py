@@ -89,7 +89,7 @@ if __name__ == "__main__":
     parser.add_argument('--exp_name', help='experiment name', type=str, required=False, default=['FedLex'])
     seed = int(time.time())
     parser.add_argument('--seed', help='global random seed', type=int, default=seed)
-    parser.add_argument('--device', help='device to use; `cpu`, `cuda`, `cuda:GPU_NUMBER`', type=str, default='mps')
+    parser.add_argument('--device', help='device to use; `cpu`, `cuda`, `cuda:GPU_NUMBER`', type=str, default='cuda')
     parser.add_argument('--device_ids', nargs='+', type=int,
                         help='GPU device ids for multi-GPU training (use all available GPUs if no number is passed)',
                         default=[])
