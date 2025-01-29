@@ -183,7 +183,7 @@ if __name__ == "__main__":
                         ],
                         nargs='+', required=False, default=['acc1','acc5','f1','precision','recall'])
     parser.add_argument('--K', help='number of total clients', type=int, default=20)
-    parser.add_argument('--R', help='total number of communication rounds', type=int, default=2)
+    parser.add_argument('--R', help='total number of communication rounds', type=int, default=200)
     parser.add_argument('--C', help='fraction of clients sampled each round', type=float,
                         choices=[Range(0., 1.)], default=0.2)
     parser.add_argument('--E', help='number of local epochs', type=int, default=5)
@@ -212,8 +212,8 @@ if __name__ == "__main__":
                         choices=[Range(0., 100)], default=0.01)
 
     # exploration phase arguments
-    parser.add_argument('--Patience_mask', help='patience for early-stopping in scouting process', type=int, default=40)
-    parser.add_argument('--epoochs_mask', help='epochs for the exploration process', type=int, default=1)
+    parser.add_argument('--Patience_mask', help='patience for early-stopping in scouting process', type=int, default=150)
+    parser.add_argument('--epoochs_mask', help='epochs for the exploration process', type=int, default=150)
     parser.add_argument('--perc_clients_for_mask', help='% of clients for which to create a mask', type=float,
                         choices=[Range(0., 1.)], default=1)
     parser.add_argument('--guidence_normalization', help='normalization type for Global Guidance mask', type=str,
