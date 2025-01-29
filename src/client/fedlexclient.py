@@ -129,7 +129,7 @@ class FedlexClient(BaseClient):
 
             torch.save(
                 tl_base.state_dict(),
-                f'checkpoints/tl_base{self.args.exp_name}.ckpt'
+                f'FedLEx/checkpoints/tl_base{self.args.exp_name}.ckpt'
             )
             print("Baseline model 'tl_base' saved.")
 
@@ -207,7 +207,7 @@ class FedlexClient(BaseClient):
                 mask_dict[name] = torch.ones_like(param)
 
             # 2d. Save the mask to checkpoints
-            mask_path = f'checkpoints/mask{self.args.exp_name}.pt'
+            mask_path = f'FedLEx/checkpoints/mask{self.args.exp_name}.pt'
             torch.save(mask_dict, mask_path)
             print(f"Global exploration mask saved at {mask_path}.")
 
@@ -222,7 +222,7 @@ class FedlexClient(BaseClient):
         
         else:
             # Mask already exists, just load it
-            mask_path = f'checkpoints/mask{self.args.exp_name}.pt'
+            mask_path = f'FedLEx/checkpoints/mask{self.args.exp_name}.pt'
             print(f"Mask already exists. Loading from {mask_path}")
             existing_mask = torch.load(mask_path, map_location=self.args.device)
             return existing_mask
@@ -292,7 +292,7 @@ class FedlexClient(BaseClient):
 
                 # if mask exists, apply it to grad
                 if mask_exists(f'mask{self.args.exp_name}'):
-                    global_mask = torch.load(f'checkpoints/mask{self.args.exp_name}.pt')
+                    global_mask = torch.load(f'FedLEx/checkpoints/mask{self.args.exp_name}.pt')
                     for name, param in self.model.named_parameters():
                         if param.requires_grad and name in global_mask:
                             # multiply grad by mask
