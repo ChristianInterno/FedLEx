@@ -1,6 +1,5 @@
 import copy
 import torch
-import torch.nn.utils.prune as prune
 import inspect
 import numpy as np
 import logging
@@ -10,7 +9,6 @@ from src import MetricManager
 from src.GTL_utils import checkpoint_exists, mask_exists
 import time
 import matplotlib.pyplot as plt
-
 import math
 import os
 logger = logging.getLogger(__name__)
@@ -21,7 +19,6 @@ class FedlexClient(BaseClient):
         super(FedlexClient, self).__init__()
         
         self.id = id  # Assign the client ID here
-        
         self.args = args
         self.training_set = training_set
         self.test_set = test_set
@@ -35,13 +32,13 @@ class FedlexClient(BaseClient):
         # Save the client's data
         self.save_client_data()
         
-        # Get the absolute path to the directory containing this script
-        self.base_dir = os.path.dirname(os.path.realpath(__file__)) 
+        # path for the base checkpoint model
         check_dir = "checkpoints/"
         self.checkpoint_path = os.path.join(check_dir, f"tl_base{self.args.exp_name}.ckpt")
-        
+
+
     def save_client_data(self):
-        # Create directory to save the data
+        """Save each client’s training and test data in `result_path/client_data/client_{id}/`."""
         data_dir = os.path.join(self.args.result_path, 'client_data', f'client_{self.id}')
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
@@ -50,8 +47,7 @@ class FedlexClient(BaseClient):
             print(f'Directory already exists: {data_dir}')
 
         # Extract training data and labels
-        train_data = []
-        train_labels = []
+        train_data, train_labels = [], []
         for idx in range(len(self.training_set)):
             data, label = self.training_set[idx]
             train_data.append(data)
@@ -63,8 +59,7 @@ class FedlexClient(BaseClient):
         print(f'Saved training data for client {self.id} at {train_data_file}')
 
         # Extract test data and labels
-        test_data = []
-        test_labels = []
+        test_data, test_labels = [], []
         for idx in range(len(self.test_set)):
             data, label = self.test_set[idx]
             test_data.append(data)
@@ -73,16 +68,16 @@ class FedlexClient(BaseClient):
         # Save test data
         test_data_file = os.path.join(data_dir, 'test_data.pt')
         torch.save({'data': test_data, 'labels': test_labels}, test_data_file)
-        print(f'Saved test data for client {self.id} at {test_data_file}') 
-	
-    def find_project_root(self,current_directory, marker):
+        print(f'Saved test data for client {self.id} at {test_data_file}')
+
+
+    def find_project_root(self, current_directory, marker):
         root = current_directory
         while root != '/':  # stop at the root of the filesystem
             if marker in os.listdir(root):
                 return root
             root = os.path.dirname(root)
         raise FileNotFoundError("Project root marker not found")
-                
 
 
     def print_model_info(self, model, title="Model information"):
@@ -90,7 +85,11 @@ class FedlexClient(BaseClient):
         total_zero_params = sum((p == 0).sum().item() for p in model.parameters())
         total_size = sum(p.element_size() * p.nelement() for p in model.parameters())
         sparsity = total_zero_params / total_params
-        compression_rate = total_params / (total_params - total_zero_params) if total_zero_params else 1
+        compression_rate = (
+            total_params / (total_params - total_zero_params)
+            if total_zero_params != 0
+            else 1
+        )
 
         logger.info(f"{title}:")
         logger.info(f"Total parameters: {total_params}")
@@ -99,17 +98,23 @@ class FedlexClient(BaseClient):
         logger.info(f"Compression rate: {compression_rate:.2f}x")
         logger.info(f"Total size (bytes): {total_size}")
         for name, param in model.named_parameters():
-            logger.info(f"{name}: {param.size()}, sparsity: {torch.sum(param == 0) / param.nelement()}")
-
+            sp = torch.sum(param == 0).item() / param.nelement()
+            logger.info(f"{name}: {param.size()}, sparsity: {sp:.4f}")
 
 
     def create_scout(self, model):
+        """Create (or load) a base model and exploration mask if not already existing."""
+
+        # ------------------------------------------------------
+        # 1. Check if the baseline model exists, otherwise train it once
+        # ------------------------------------------------------
         if not checkpoint_exists('tl_base'):
-            print('wait! we dont have a tl_base model...letz create it!')
+            print('No "tl_base" model found. Creating it...')
             tl_base = model.train()
             model.to(self.args.device)
+
             optimizer = self.optim(model.parameters(), **self._refine_optim_args(self.args))
-            for e in range(1) :
+            for e in range(1):
                 for inputs, targets in self.train_loader:
                     inputs, targets = inputs.to(self.args.device), targets.to(self.args.device)
 
@@ -120,98 +125,126 @@ class FedlexClient(BaseClient):
                         param.grad = None
 
                     loss.backward()
-                    optimizer.step()  # !!! the application of those deltas is happening here
+                    optimizer.step()
 
-            torch.save(tl_base.state_dict(),
-             f'checkpoints/tl_base{self.args.exp_name}.ckpt')
+            torch.save(
+                tl_base.state_dict(),
+                f'checkpoints/tl_base{self.args.exp_name}.ckpt'
+            )
+            print("Baseline model 'tl_base' saved.")
 
+        # ------------------------------------------------------
+        # 2. Check if a mask is already created
+        # ------------------------------------------------------
         if not mask_exists(f'mask{self.args.exp_name}'):
-            print('The scout is exploring....')
+            print('The scout is exploring.... (No mask found.)')
             mm = MetricManager(self.args.eval_metrics)
-            mask = model.train()
+
+            # Put model in train mode
+            model.train()
             model.to(self.args.device)
             optimizer = self.optim(model.parameters(), **self._refine_optim_args(self.args))
 
-            best_loss = float('inf')  # initialize best loss as infinity
-            patience_counter = 0  # counter for early stopping
-            patience = self.args.Patience_mask  # number of epochs to wait before stopping
+            best_loss = float('inf')  
+            patience_counter = 0  
+            patience = self.args.Patience_mask  
 
-            # for e in range(self.args.epoochs_mask):
+            # ------------------------------
+            #    2a. Train / Explore
+            # ------------------------------
             for e in range(self.args.epoochs_mask):
-                epoch_correct = 0  # number of correct predictions in this epoch
-                epoch_total = 0  # total number of predictions in this epoch
+                epoch_correct = 0
+                epoch_total = 0
                 for inputs, targets in self.train_loader:
                     inputs, targets = inputs.to(self.args.device), targets.to(self.args.device)
 
                     outputs = model(inputs)
                     loss = self.criterion()(outputs, targets)
 
+                    # zero grads
                     for param in model.parameters():
                         param.grad = None
 
+                    # backward + update
                     loss.backward()
-                    optimizer.step() # !!! the application of those deltas is happening here
+                    optimizer.step()
 
-                    # calculate accuracy
+                    # track accuracy
                     predicted = outputs.argmax(dim=1)
-                    correct = (predicted == targets).sum().item()  # number of correct predictions
-                    total = targets.shape[0]  # total number of predictions
+                    correct = (predicted == targets).sum().item()
+                    total = targets.size(0)
                     epoch_correct += correct
                     epoch_total += total
 
-
                     mm.track(loss.item(), outputs, targets)
-                else:
-                    mm.aggregate(len(self.training_set), e + 1)
 
-                epoch_accuracy = epoch_correct / epoch_total  # calculate accuracy for this epoch
-                print(f'Epoch: {e + 1}, Loss: {loss.item()}, Accuracy: {epoch_accuracy}')  # print the epoch number, loss, and accuracy
+                # end of epoch
+                mm.aggregate(len(self.training_set), e + 1)
+                epoch_accuracy = epoch_correct / epoch_total
+                print(f'Epoch: {e+1}, Loss: {loss.item():.4f}, Accuracy: {epoch_accuracy:.4f}')
 
-                # early stopping
+                # 2b. Early stopping logic
                 if loss.item() < best_loss:
                     best_loss = loss.item()
-                    patience_counter = 0  # reset counter when loss improves
+                    patience_counter = 0
                 else:
-                    patience_counter += 1  # increment counter when loss does not improve
+                    patience_counter += 1
 
-                if patience_counter >= patience:  # if counter reaches the threshold
-                    print(f'Early stopping at epoch {e + 1}, best loss was {best_loss}')
-                    break  # stop the training
+                if patience_counter >= patience:
+                    print(f'Early stopping at epoch {e+1}, best loss was {best_loss:.4f}')
+                    break
 
-            return mask
+            # ------------------------------
+            #    2c. Build your mask
+            # ------------------------------
+            ### CHANGES HERE: Build the actual mask dictionary
+            ###
+            # For example, you might base your mask on some criterion. 
+            # Here, we’ll just create an “all-ones” mask as a placeholder:
+            mask_dict = {}
+            for name, param in model.named_parameters():
+                # Example placeholder: fully dense mask
+                mask_dict[name] = torch.ones_like(param)
+
+            # 2d. Save the mask to checkpoints
+            mask_path = f'checkpoints/mask{self.args.exp_name}.pt'
+            torch.save(mask_dict, mask_path)
+            print(f"Global exploration mask saved at {mask_path}.")
+
+            # 2e. ALSO SAVE the mask to this client's folder
+            data_dir = os.path.join(self.args.result_path, 'client_data', f'client_{self.id}')
+            mask_file = os.path.join(data_dir, f'exploration_local_matrix_{self.id}.pt')
+            torch.save(mask_dict, mask_file)
+            print(f"Exploration mask saved for client {self.id} at {mask_file}.\n")
+
+            # return the mask_dict as well
+            return mask_dict
+        
+        else:
+            # Mask already exists, just load it
+            mask_path = f'checkpoints/mask{self.args.exp_name}.pt'
+            print(f"Mask already exists. Loading from {mask_path}")
+            existing_mask = torch.load(mask_path, map_location=self.args.device)
+            return existing_mask
 
 
     def _refine_optim_args(self, args):
+        """Collect only the arguments that `torch.optim.Optimizer` actually needs."""
         required_args = inspect.getfullargspec(self.optim)[0]
-
-        # collect eneterd arguments
         refined_args = {}
         for argument in required_args:
             if hasattr(args, argument):
                 refined_args[argument] = getattr(args, argument)
         return refined_args
 
+
     def _create_dataloader(self, dataset, shuffle):
-        if self.args.B == 0 :
+        if self.args.B == 0:
             self.args.B = len(self.training_set)
         return torch.utils.data.DataLoader(dataset=dataset, batch_size=self.args.B, shuffle=shuffle)
 
 
     def update(self):
-
-        #def get_nested_module(model, module_path): #I dont remember for what is this, might be AUTOFLIP
-            #logger.info("Module path:", module_path)
-            #modules = module_path.split('.')
-            #for module in modules:
-                #logger.info("Current module:", module)
-                #if hasattr(model, module):
-                    #model = getattr(model, module)
-                    #logger.info("Submodule found:", model)
-                #else:
-                    #logger.info("Submodule not found:", module)
-                    #return None
-            #return model
-
         mm = MetricManager(self.args.eval_metrics)
         self.model.train()
         self.model.to(self.args.device)
@@ -221,8 +254,8 @@ class FedlexClient(BaseClient):
             param.requires_grad = False
         
         optimizer = self.optim(self.model.parameters(), **self._refine_optim_args(self.args))
-        
-        # Create directory for saving client models and optimizer states
+
+        # Create directory for saving client model & optimizer states
         client_dir = os.path.join(self.args.result_path, f'round_{self.args.curr_round}', f'client_{self.id}')
         if not os.path.exists(client_dir):
             os.makedirs(client_dir)
@@ -230,110 +263,73 @@ class FedlexClient(BaseClient):
         else:
             print(f'Directory already exists: {client_dir}')
 
-        # Save model parameters before local training
+        # Save model before local training
         torch.save(self.model.state_dict(), os.path.join(client_dir, 'model_before_training.pth'))
         print(f'Saved model before training at {client_dir}')
 
-        # Save optimizer state before local training
+        # Save optimizer before local training
         torch.save(optimizer.state_dict(), os.path.join(client_dir, 'optimizer_before_training.pth'))
         print(f'Saved optimizer state before training at {client_dir}')
 
+        # ========== LOCAL EPOCHS ========== #
         for e in range(self.args.E):
             for inputs, targets in self.train_loader:
                 inputs, targets = inputs.to(self.args.device), targets.to(self.args.device)
 
                 outputs = self.model(inputs)
                 loss = self.criterion()(outputs, targets)
-                
-                initial_params = {}  # Store initial parameter values
+
+                # store initial param values
+                initial_params = {}
                 for name, param in self.model.named_parameters():
                     if param.requires_grad:
                         initial_params[name] = param.clone()
 
+                # zero grads + backward
                 for param in self.model.parameters():
                     param.grad = None
                 loss.backward()
-                
-                
+
+                # if mask exists, apply it to grad
                 if mask_exists(f'mask{self.args.exp_name}'):
-                    mask = torch.load(f'/home/cinterno/storage/FL2/Federated-Learning-in-PyTorch/checkpoints/mask{self.args.exp_name}.pt')
+                    global_mask = torch.load(f'checkpoints/mask{self.args.exp_name}.pt')
                     for name, param in self.model.named_parameters():
-                        if param.requires_grad:
-                            param.grad *= torch.tensor(mask[name], device=param.device)
-                
+                        if param.requires_grad and name in global_mask:
+                            # multiply grad by mask
+                            param.grad *= global_mask[name].to(param.device)
+
                 if self.args.max_grad_norm > 0:
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
 
                 optimizer.step()
-                
+
+                # track parameter changes
                 for name, param in self.model.named_parameters():
                     if param.requires_grad:
                         initial_value = initial_params[name]
-                        new_value = param.clone()  # Get the updated value after the gradient update
+                        new_value = param.clone()
                         percent_change = torch.abs(new_value - initial_value) / (torch.abs(initial_value) + 1e-8) * 100
-                        percent_change = percent_change.detach().cpu().numpy()  # Convert to numpy array for easier processing
-                        avg_percent_change = np.mean(percent_change)
-
+                        avg_percent_change = percent_change.detach().cpu().mean().item()
                         print(f"Parameter: {name}, Percentage Change: {avg_percent_change:.2f}%")
-                
-                #Client Pruning
-                #if mask_exists(f'mask{self.args.exp_name}'):
-                    #if self.args.mask_pruining == 'True': #AutoFLIP
 
-                        #updated_mask = torch.load(f'checkpoints/InitPruinedGlobalModel/mask{self.args.exp_name}.pt')
-
-                        #for path, mask_value in updated_mask.items():
-                            #Split the path to access specific submodule and parameter
-                            #submodule_path, param_name = path.rsplit('.', 1)
-                            #submodule = get_nested_module(self.model, submodule_path)
-
-                            #if submodule:
-                                #mask_tensor = torch.tensor(mask_value, device=submodule.weight.device)
-                                #Ensure the mask is correctly shaped for the parameter it's applied to
-                                #target_param = getattr(submodule, param_name)
-                                #assert mask_tensor.shape == target_param.shape, f"Shape mismatch for {path}: {mask_tensor.shape} vs {target_param.shape}"
-
-                                #try:
-                                    #Apply pruning to the specific parameter of the submodule
-                                    #prune.custom_from_mask(submodule, name=param_name, mask=mask_tensor)
-                                #except AttributeError as e:
-                                    #logger.info(f"Error applying pruning to {path}: {e}")
                 mm.track(loss.item(), outputs, targets)
-            else:
-                mm.aggregate(len(self.training_set), e + 1)
-                
-        # Save model parameters after local training
+            # end epoch
+            mm.aggregate(len(self.training_set), e + 1)
+
+        # Save model after local training
         torch.save(self.model.state_dict(), os.path.join(client_dir, 'model_after_training.pth'))
         print(f'Saved model after training at {client_dir}')
 
-        # Save optimizer state after local training
+        # Save optimizer after local training
         torch.save(optimizer.state_dict(), os.path.join(client_dir, 'optimizer_after_training.pth'))
         print(f'Saved optimizer state after training at {client_dir}')
-        
-        #Other AutoFLIP stuff
-        #def finalize_pruning(model):
-            #for name, module in model.named_modules():
-                #Check if the module has the 'weight_orig' attribute, indicating pruning was applied to the weight
-                #if hasattr(module, 'weight_orig'):
-                    #Remove pruning reparameterization for 'weight'
-                    #prune.remove(module, 'weight')
 
-                #Similarly, check if pruning was applied to the bias
-                #if hasattr(module, 'bias_orig'):
-                    #Remove pruning reparameterization for 'bias'
-                    #prune.remove(module, 'bias')
-
-            #return model
-
-        #self.model = finalize_pruning(self.model)
-        #self.print_model_info(self.model, f"Client{self.id} Model after pruning")
-        #torch.save(self.model.state_dict(), f'/home/cinterno/storage/FL2/Federated-Learning-in-PyTorch/checkpoints/ClientPruinedGModel/Client{self.id}for{self.args.exp_name}.pt')
         return mm.results
+
 
     @torch.inference_mode()
     def evaluate(self):
-
-        if self.args._train_only:  # `args.test_fraction` == 0
+        if self.args._train_only:  # if `test_fraction == 0`
             return {'loss': -1, 'metrics': {'none': -1}}
 
         mm = MetricManager(self.args.eval_metrics)
@@ -342,21 +338,20 @@ class FedlexClient(BaseClient):
 
         for inputs, targets in self.test_loader:
             inputs, targets = inputs.to(self.args.device), targets.to(self.args.device)
-
             outputs = self.model(inputs)
             loss = self.criterion()(outputs, targets)
-
             mm.track(loss.item(), outputs, targets)
-        else:
-            mm.aggregate(len(self.test_set))
+        mm.aggregate(len(self.test_set))
         return mm.results
 
-    def download(self, model):
 
+    def download(self, model):
+        """Download (copy) global model from the server."""
         self.model = copy.deepcopy(model)
 
     def upload(self):
-        self.model.to('self.args.device')
+        """Upload local model parameters to the server."""
+        self.model.to(self.args.device)
         return self.model.named_parameters()
 
     def __len__(self):
@@ -364,4 +359,3 @@ class FedlexClient(BaseClient):
 
     def __repr__(self):
         return f'CLIENT < {self.id} >'
-
