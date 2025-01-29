@@ -33,7 +33,7 @@ class FedlexClient(BaseClient):
         self.save_client_data()
         
         # path for the base checkpoint model
-        check_dir = "checkpoints/"
+        check_dir = "FedLEx/checkpoints/"
         self.checkpoint_path = os.path.join(check_dir, f"tl_base{self.args.exp_name}.ckpt")
 
 
