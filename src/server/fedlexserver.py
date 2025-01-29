@@ -17,7 +17,7 @@ from src import init_weights, TqdmToLogger, MetricManager
 from .fedlexbaseserver import fedlexbaseserver
 import matplotlib.pyplot as plt
 from src.plot_utils import plot_metric_server, plot_metric_client, plot_Trajectory_l2, top_eigenvalues
-from src.GTL_utils import create_mask, mask_exists, create_mask_pruining  # Import the function to apply the mask
+from src.GTL_utils import create_mask, mask_exists, create_mask # Import the function to apply the mask
 from src.utils import compute_loss, compute_loss_landscape
 import torch.nn as nn
 
@@ -149,11 +149,10 @@ class Fedlexserver(fedlexbaseserver):
                     total=len(client_datasets)
             ):
                 ##########################################
-                # Questo e per esperimento LEAF, per  non creare scout per ogni client ne selezionamo solo un percentuale
                 if identifier in clients_to_create_mask:
                     client, mask = workhorse.submit(__create_client, identifier, datasets).result()
                     clients.append(client)
-                    self.global_scout.append(mask.state_dict())
+                    self.global_scout.append(mask)
                 else:
                     client = CLINET_CLASS(id=identifier, args=self.args, training_set=datasets[0], test_set=datasets[-1])
                     client.id = identifier
@@ -167,25 +166,6 @@ class Fedlexserver(fedlexbaseserver):
 
         if not mask_exists(f'mask{self.args.exp_name}'):
             print("Every explorer has completed the exploration!")
-            print("""-.          ||================\n
-                  /= ___  \      ||================\n
-                 |- /~~~\  |     ||================\n
-                 |=( '.' ) |     ||================\n
-                 \__\_=_/__/     ||================\n
-                  {_______}      ||================\n
-                /` *       `'--._||\n
-               /= .     [] .     { >\n
-              /  /|ooo     |`'--'||\n
-             (   )\_______/      ||\n
-              \``\/       \      ||\n
-               `-| ==    \_|     ||\n
-                 /         |     ||\n
-                |=   >\  __/     ||\n
-                \   \ |- --|     ||\n
-                 \ __| \___/     ||\n
-                 _{__} _{__}     ||\n
-                (    )(    )     ||\n
-            ^^~  `""""""  ~^^^~^^~~~^^^~^^^~^^^~^^~^""")
         logger.info(
             f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] ...sucessfully created {self.args.K} clients!')
 
@@ -196,9 +176,9 @@ class Fedlexserver(fedlexbaseserver):
             client.download(self.model)
 
         logger.info(
-            f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] Broadcast the pruned global model at the server!')
+            f'[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] Broadcast the global model at the server!')
 
-        self.model.to('cuda')
+        self.model.to(self.args.device)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(ids), os.cpu_count() - 1)) as workhorse:
             for identifier in TqdmToLogger(
@@ -352,12 +332,23 @@ class Fedlexserver(fedlexbaseserver):
                 if self.args.perc_clients_for_mask == 1:
                     global_scout_filtered = [self.global_scout[i] for i in
                                              ids]  # we are selecting the scout for create the Mask for this round
-                    create_mask_pruining(model_checkpoint=f'tl_base{self.args.exp_name}', scouts=global_scout_filtered,
+                    mask = create_mask(model_checkpoint=f'tl_base{self.args.exp_name}', scouts=global_scout_filtered,
                                 name_file=self.args.exp_name, args=self.args)#use global_scout_filtered for update mask
                 else:
-                    create_mask(model_checkpoint=f'tl_base{self.args.exp_name}', scouts=self.global_scout,
+                    mask = create_mask(model_checkpoint=f'tl_base{self.args.exp_name}', scouts=self.global_scout,
                                 name_file=self.args.exp_name,
-                                args=self.args)  # usiamo sempre la mask creata all inizio dalla percentuale desiderate di C
+                                args=self.args)  
+
+                # Save a per-round copy of the mask
+                round_dir = os.path.join(self.args.result_path, f'round_{self.round}')
+                os.makedirs(round_dir, exist_ok=True)
+                mask_round_path = os.path.join(round_dir, f'global_gmatrix_round_{self.round}.pt')
+
+                torch.save(mask, mask_round_path)
+                logger.info(
+                    f"[{self.args.algorithm.upper()}] [Round: {str(self.round).zfill(4)}] "
+                    f"Saved global mask for this round at: {mask_round_path}"
+)
 
             update_sizes, update_results = list(map(list, zip(*results)))
             update_sizes, update_results = dict(ChainMap(*update_sizes)), dict(ChainMap(*update_results))
