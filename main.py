@@ -95,7 +95,7 @@ if __name__ == "__main__":
                         default=[])
     parser.add_argument('--data_path', help='path to read data from', type=str, default='./data')
     parser.add_argument('--log_path', help='path to store logs', type=str, default='./log')
-    parser.add_argument('--result_path', help='path to save results', type=str, default='FedLEx/result_paper')
+    parser.add_argument('--result_path', help='path to save results', type=str, default='./result_paper')
     parser.add_argument('--use_tb', help='use TensorBoard to track logs (atif passed)', action='store_true')
     parser.add_argument('--tb_port', help='TensorBoard port number (valid only if `use_tb`)', type=int, default=6006)
     parser.add_argument('--tb_host', help='TensorBoard host address (valid only if `use_tb`)', type=str, default='0.0.0.0')
