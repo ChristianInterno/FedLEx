@@ -5,7 +5,7 @@ import os
 from src import Range, set_logger, TensorBoardRunner, check_args, set_seed, load_dataset, load_model
 
 
-checkpoint_dir_name = 'FedLEx/checkpoints'
+checkpoint_dir_name = './checkpoints'
 
 def checkpoint_exists(name):
     return os.path.exists(f'{checkpoint_dir_name}/{name}.ckpt')
