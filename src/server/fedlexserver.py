@@ -23,7 +23,7 @@ import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 
-checkpoint_dir_name = 'checkpoints'
+checkpoint_dir_name = 'FedLEx/checkpoints'
 
 
 class Fedlexserver(fedlexbaseserver):
