@@ -103,11 +103,10 @@ class FedlexClient(BaseClient):
 
 
     def create_scout(self, model):
-        """Create (or load) a base model and exploration mask if not already existing."""
-
-        # ------------------------------------------------------
-        # 1. Check if the baseline model exists, otherwise train it once
-        # ------------------------------------------------------
+        """Run the exploration phase to produce a local mask and save it in this client’s folder.
+        This local mask (not a global one) is then used by the server to create the global mask."""
+        
+        # 1. Ensure baseline exists; if not, train and save it.
         if not checkpoint_exists('tl_base'):
             print('No "tl_base" model found. Creating it...')
             tl_base = model.train()
@@ -117,13 +116,12 @@ class FedlexClient(BaseClient):
             for e in range(1):
                 for inputs, targets in self.train_loader:
                     inputs, targets = inputs.to(self.args.device), targets.to(self.args.device)
-
                     outputs = model(inputs)
                     loss = self.criterion()(outputs, targets)
-
+                    
+                    # zero gradients
                     for param in model.parameters():
                         param.grad = None
-
                     loss.backward()
                     optimizer.step()
 
@@ -133,99 +131,74 @@ class FedlexClient(BaseClient):
             )
             print("Baseline model 'tl_base' saved.")
 
-        # ------------------------------------------------------
-        # 2. Check if a mask is already created
-        # ------------------------------------------------------
-        if not mask_exists(f'mask{self.args.exp_name}'):
-            print('The scout is exploring.... (No mask found.)')
-            mm = MetricManager(self.args.eval_metrics)
+        # 2. Run exploration to produce the local mask.
+        print(f'Client {self.id} is exploring to produce its local mask...')
+        mm = MetricManager(self.args.eval_metrics)
+        model.train()
+        model.to(self.args.device)
+        optimizer = self.optim(model.parameters(), **self._refine_optim_args(self.args))
 
-            # Put model in train mode
-            model.train()
-            model.to(self.args.device)
-            optimizer = self.optim(model.parameters(), **self._refine_optim_args(self.args))
+        best_loss = float('inf')
+        patience_counter = 0
+        patience = self.args.Patience_mask
 
-            best_loss = float('inf')  
-            patience_counter = 0  
-            patience = self.args.Patience_mask  
+        for e in range(self.args.epoochs_mask):
+            epoch_correct = 0
+            epoch_total = 0
+            for inputs, targets in self.train_loader:
+                inputs, targets = inputs.to(self.args.device), targets.to(self.args.device)
 
-            # ------------------------------
-            #    2a. Train / Explore
-            # ------------------------------
-            for e in range(self.args.epoochs_mask):
-                epoch_correct = 0
-                epoch_total = 0
-                for inputs, targets in self.train_loader:
-                    inputs, targets = inputs.to(self.args.device), targets.to(self.args.device)
+                outputs = model(inputs)
+                loss = self.criterion()(outputs, targets)
 
-                    outputs = model(inputs)
-                    loss = self.criterion()(outputs, targets)
+                # zero gradients and update
+                for param in model.parameters():
+                    param.grad = None
+                loss.backward()
+                optimizer.step()
 
-                    # zero grads
-                    for param in model.parameters():
-                        param.grad = None
+                # track accuracy for reporting
+                predicted = outputs.argmax(dim=1)
+                correct = (predicted == targets).sum().item()
+                total = targets.size(0)
+                epoch_correct += correct
+                epoch_total += total
 
-                    # backward + update
-                    loss.backward()
-                    optimizer.step()
+                mm.track(loss.item(), outputs, targets)
+            mm.aggregate(len(self.training_set), e + 1)
+            epoch_accuracy = epoch_correct / epoch_total
+            print(f'Epoch: {e+1}, Loss: {loss.item():.4f}, Accuracy: {epoch_accuracy:.4f}')
 
-                    # track accuracy
-                    predicted = outputs.argmax(dim=1)
-                    correct = (predicted == targets).sum().item()
-                    total = targets.size(0)
-                    epoch_correct += correct
-                    epoch_total += total
+            # Early stopping logic based on loss.
+            if loss.item() < best_loss:
+                best_loss = loss.item()
+                patience_counter = 0
+            else:
+                patience_counter += 1
+            if patience_counter >= patience:
+                print(f'Early stopping at epoch {e+1}, best loss was {best_loss:.4f}')
+                break
 
-                    mm.track(loss.item(), outputs, targets)
+        # 3. Build the local mask (here as a placeholder: an "all-ones" mask).
+        local_mask = {}
+        for name, param in model.named_parameters():
+            local_mask[name] = torch.ones_like(param)
 
-                # end of epoch
-                mm.aggregate(len(self.training_set), e + 1)
-                epoch_accuracy = epoch_correct / epoch_total
-                print(f'Epoch: {e+1}, Loss: {loss.item():.4f}, Accuracy: {epoch_accuracy:.4f}')
-
-                # 2b. Early stopping logic
-                if loss.item() < best_loss:
-                    best_loss = loss.item()
-                    patience_counter = 0
-                else:
-                    patience_counter += 1
-
-                if patience_counter >= patience:
-                    print(f'Early stopping at epoch {e+1}, best loss was {best_loss:.4f}')
-                    break
-
-            # ------------------------------
-            #    2c. Build your mask
-            # ------------------------------
-            ### CHANGES HERE: Build the actual mask dictionary
-            ###
-            # For example, you might base your mask on some criterion. 
-            # Here, we’ll just create an “all-ones” mask as a placeholder:
-            mask_dict = {}
-            for name, param in model.named_parameters():
-                # Example placeholder: fully dense mask
-                mask_dict[name] = torch.ones_like(param)
-
-            # 2d. Save the mask to checkpoints
-            mask_path = f'./checkpoints/mask{self.args.exp_name}.pt'
-            torch.save(mask_dict, mask_path)
-            print(f"Global exploration mask saved at {mask_path}.")
-
-            # 2e. ALSO SAVE the mask to this client's folder
-            data_dir = os.path.join(self.args.result_path, 'client_data', f'client_{self.id}')
-            mask_file = os.path.join(data_dir, f'exploration_local_matrix_{self.id}.pt')
-            torch.save(mask_dict, mask_file)
-            print(f"Exploration mask saved for client {self.id} at {mask_file}.\n")
-
-            # return the mask_dict as well
-            return mask_dict
-        
+        # 4. Save the local mask in the client’s folder.
+        data_dir = os.path.join(self.args.result_path, 'client_data', f'client_{self.id}')
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+            print(f'Created directory: {data_dir}')
         else:
-            # Mask already exists, just load it
-            mask_path = f'./checkpoints/mask{self.args.exp_name}.pt'
-            print(f"Mask already exists. Loading from {mask_path}")
-            existing_mask = torch.load(mask_path, map_location=self.args.device)
-            return existing_mask
+            print(f'Directory already exists: {data_dir}')
+
+        mask_file = os.path.join(data_dir, f'exploration_local_matrix_{self.id}.pt')
+        torch.save(local_mask, mask_file)
+        print(f"Local exploration mask saved for client {self.id} at {mask_file}.\n")
+
+        # 5. Return the local mask.
+        return local_mask
+
 
 
     def _refine_optim_args(self, args):
